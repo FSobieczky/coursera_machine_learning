@@ -1,0 +1,212 @@
+---
+title: "Project: Machine Learning"
+author: "Florian Sobieczky"
+output: html_document
+---
+
+
+Report on: Project of the Coursera Class "Machine Learning" of the Data Science Specialization
+----------------------------------------------------------------------------------------------
+
+(Florian Sobieczky - October 22, 2015)
+
+--------------------------------------
+
+Overview: Using the data sets from Velloso et. al. about
+`Qualitative Activity Recognition of Weight Lifting Exercises',
+a prediction algorithm is presented using standard methods from
+the caret package in R.
+
+
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks,
+H. Qualitative Activity Recognition of Weight Lifting
+Exercises. Proceedings of 4th International Conference in Cooperation
+with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI,
+2013.
+
+---------------------------------------------------------------
+
+Load Libraries
+
+```{r knitr_options, include=FALSE}
+library(knitr);
+library(caret);
+library(kernlab);
+library(rpart);
+set.seed(53079239)
+```
+
+Preliminaries:
+
+
+```{r load_caretl}
+library(caret)
+```
+
+-------------------------------------------------------------------------
+
+Data import and preparation:
+
+We will consider training data from the project description:
+
+```{r load_cross}
+trainD<-read.csv("pml-training.csv");  # training data
+testD<-read.csv("pml-testing.csv");   # testing data
+```
+
+The exercise asks to use the accellerometerdata from the set
+
+
+-------------------------------------------------------------------------
+
+
+Goal
+----
+
+The exercise states that:
+
+The goal of your project is to predict the manner in which \"they did
+the exercise.  This is the 'classe' variable in the training set. \"
+
+In other words, the question is for a prediction model for the classe
+variable, given any other variable as a predictor.
+
+Data Exploration
+----------------
+
+To first explore the data set and spot good predictor variables (so as
+not having to use all 159 variables as predictors), we use feature
+plot to find variables for which the measured coordinates decompose
+well into the different classes (A,B,C,D, or E).
+
+The following command is repeated with different groups of subcolumns.
+The following group (1,7,10,15) (X, num_window, yaw_belt,
+skewness_roll_belt) is particularly instructive:
+
+```{r, echo=TRUE}
+featurePlot(trainD[,c(1,7,10,15)],y=trainD$classe,plot="pairs")
+```
+
+For such pairs of parameters as X vs. skewness_roll_belt there is
+almost 100% correlation. This would give the perfect predictor,
+however, it would be not a valuable predictor, as it would not derive
+a prediction from the initial measurements. The exercise asks to make
+the prediction only based on the (X,Y,Z) accellerometer data,
+including the 'magnet' and 'gyros' columns, which is the data directly
+from the measurement (non-aggregate data).
+
+Moreover, the featurePlot also shows that using a simple linear 
+model would be not very useful (see for example X vs. num_window).
+Clearly, a clustering should be first applied, which is inherent in
+more advanced prediction models as those involving trees.
+
+Selection of Predictors
+-----------------------
+
+
+```{r, echo=TRUE}
+trD<-trainD[,grep("acc|magnet|gyros",names(trainD))]
+trD<-trD[,grep("var",names(trD),invert=TRUE)]
+trD<-trD[,grep("total",names(trD),invert=TRUE)]
+trD$classe<-trainD$classe
+print(names(trD))
+```
+
+The data frame 'trD' is the reduced data frame (without NA's, and no
+aggregate data), which will be used as the basis of the prediction.
+
+Prediction model: Decition trees
+--------------------------------
+
+We will use prediction with trees, which first splits the data into
+different subsets, as described in the first lecture of week three
+(using the rpart-package):
+
+```{r, echo=TRUE}
+modFit<-train(classe~., method="rpart", data=trD)
+print(modFit$finalModel)
+```
+
+The prediction itself can be done by using the 'newdata' option of predict()
+on the testset:
+
+```{r, echo=TRUE}
+predict(modFit, newdata=destD)
+```
+
+The result is here, that mainly the categories A, D and E appear in
+the test set, were A seems to be the category of more central (less
+extreme) values for the predictors.
+
+
+Refinement of the model
+-----------------------
+
+In order to get more insight, we also apply the model to each of the
+three coordinates x,y and z, individually. Knowing that the model for
+the larger set of predictors is some weighted mean of these three groups
+of predictor variables:
+
+```{r, echo=TRUE}
+trDx<-trD[,grep("x",names(trD))];
+trDx$classe<-trainD$classe;
+trDy<-trD[,grep("y",names(trD))];
+trDy$classe<-trainD$classe;
+trDz<-trD[,grep("z",names(trD))];
+trDz$classe<-trainD$classe;
+modFitx<-train(classe~., method="rpart", data=trDx);
+modFity<-train(classe~., method="rpart", data=trDy);
+modFitz<-train(classe~., method="rpart", data=trDz);
+predict(modFitx,newdata=testD);
+predict(modFity,newdata=testD);
+predict(modFitz,newdata=testD);
+```
+
+This leads to understanding of the predominant role of the
+data relevant to the x-coordinate. Since the predictors for y and
+z related data gives always the same constant value (A), it makes
+sense to exclude this data from the predictors, as it only adds
+unnecessary degrees of freedom.
+
+We see that in this way, we arrive at a more diverse prediction
+(involving A, D, E and(!) B).
+
+We continue this strategy by individually performing prediction based on
+accel, magnet and gyros, alone:
+
+```{r, echo=TRUE}
+trDxa<-trD[,grep("accel",names(trDx))];
+trDxm<-trD[,grep("magnet",names(trDx))];
+trDxg<-trD[,grep("gyros",names(trDx))];
+trDxa$classe<-trainD$classe;
+trDxm$classe<-trainD$classe;
+trDxg$classe<-trainD$classe;
+modFitxa<-train(classe~., method="rpart", data=trDxa);
+modFitxm<-train(classe~., method="rpart", data=trDxm);
+modFitxg<-train(classe~., method="rpart", data=trDxg);
+predict(modFitxa,newdata=testD);
+predict(modFitxm,newdata=testD);
+predict(modFitxg,newdata=testD);
+```
+
+From this result, it becomes apparent, that the magnet-related
+data does not lead to a discrimination in the prediction, and
+can be dropped. However, the two factors accel and gyros are 
+both important, as can be observed from the prediction involving
+all x-coordinate data being subdivided into contributions from
+these two columns. 
+
+As a result, we refrain from splitint off more data, and keep, as
+the set of relevant predictors the X-coordinate related factors
+accel and gyros.
+
+```{r, echo=TRUE}
+trrelevant<-trDx[,grep("accel|gyros",names(trDx))];
+trrelevant$classe<-trainD$classe;
+modFitFinal<-train(classe~., method="rpart", data=trrelevant);
+predict(modFitFinal,newdata=testD);
+```
+
+This is our result.
+
+---------------------------------------------------------------------
