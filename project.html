@@ -222,11 +222,6 @@ with SIGCHI (Augmented Human &#39;13) . Stuttgart, Germany: ACM SIGCHI,
 
 <p>Load Libraries</p>
 
-<p>Preliminaries:</p>
-
-<pre><code class="r">library(caret)
-</code></pre>
-
 <hr/>
 
 <p>Data import and preparation:</p>
@@ -434,15 +429,115 @@ accel and gyros.</p>
 
 <pre><code class="r">trrelevant&lt;-trDx[,grep(&quot;accel|gyros&quot;,names(trDx))];
 trrelevant$classe&lt;-trainD$classe;
-modFitFinal&lt;-train(classe~., method=&quot;rpart&quot;, data=trrelevant);
+modFitFinal&lt;-train(classe~., method=&quot;lda&quot;, data=trrelevant);
 predict(modFitFinal,newdata=testD);
 </code></pre>
 
-<pre><code>##  [1] D A A A A B D D A A A A B A B B B D D B
+<pre><code>##  [1] A A A A A A D A A A A A B A A A A E D B
 ## Levels: A B C D E
 </code></pre>
 
 <p>This is our result.</p>
+
+<hr/>
+
+<h2>Calculation of the Out of Sample Error</h2>
+
+<p>Using the test data we can use cross-validation to get an 
+estimate of the predicted out of sample error. Note that
+the test data set is about a thousandth in size of the
+training set. We could correspondingly use crossvalidation
+with 1000 test / training sets. However, this takes a very long time.
+Instead, we restrict ourselves to 10 fold cross-validation:</p>
+
+<pre><code class="r">folds&lt;-createFolds(trelevant$classe, k=10)
+</code></pre>
+
+<pre><code>## Error in createFolds(trelevant$classe, k = 10): object &#39;trelevant&#39; not found
+</code></pre>
+
+<pre><code class="r">foldFitFinal1&lt;-train(classe~., method=&quot;lda&quot;, data=trrelevant[folds$Fold01,]);
+foldFitFinal2&lt;-train(classe~., method=&quot;lda&quot;, data=trrelevant[folds$Fold02,]);
+foldFitFinal3&lt;-train(classe~., method=&quot;lda&quot;, data=trrelevant[folds$Fold03,]);
+foldFitFinal4&lt;-train(classe~., method=&quot;lda&quot;, data=trrelevant[folds$Fold04,]);
+foldFitFinal5&lt;-train(classe~., method=&quot;lda&quot;, data=trrelevant[folds$Fold05,]);
+foldFitFinal6&lt;-train(classe~., method=&quot;lda&quot;, data=trrelevant[folds$Fold06,]);
+foldFitFinal7&lt;-train(classe~., method=&quot;lda&quot;, data=trrelevant[folds$Fold07,]);
+foldFitFinal8&lt;-train(classe~., method=&quot;lda&quot;, data=trrelevant[folds$Fold08,]);
+foldFitFinal9&lt;-train(classe~., method=&quot;lda&quot;, data=trrelevant[folds$Fold09,]);
+foldFitFinal10&lt;-train(classe~., method=&quot;lda&quot;, data=trrelevant[folds$Fold10,]);
+predict(foldFitFinal1,newdata=testD);
+</code></pre>
+
+<pre><code>##  [1] A A A A A A D A A A A A E A A A A E D B
+## Levels: A B C D E
+</code></pre>
+
+<pre><code class="r">predict(foldFitFinal2,newdata=testD);
+</code></pre>
+
+<pre><code>##  [1] A A A A A A D A A A A A B A A A A E D B
+## Levels: A B C D E
+</code></pre>
+
+<pre><code class="r">predict(foldFitFinal3,newdata=testD);
+</code></pre>
+
+<pre><code>##  [1] C A A A A A D A A A A A B A A A A E D B
+## Levels: A B C D E
+</code></pre>
+
+<pre><code class="r">predict(foldFitFinal4,newdata=testD);
+</code></pre>
+
+<pre><code>##  [1] C A A A A A D A A A A A E A A A A D D B
+## Levels: A B C D E
+</code></pre>
+
+<pre><code class="r">predict(foldFitFinal5,newdata=testD);
+</code></pre>
+
+<pre><code>##  [1] B A A A A A D A A A A A B A C A A E D B
+## Levels: A B C D E
+</code></pre>
+
+<pre><code class="r">predict(foldFitFinal6,newdata=testD);
+</code></pre>
+
+<pre><code>##  [1] B A A A A A D A A A A A B A A A A E B B
+## Levels: A B C D E
+</code></pre>
+
+<pre><code class="r">predict(foldFitFinal7,newdata=testD);
+</code></pre>
+
+<pre><code>##  [1] A A A A A A D A A A A A B A A A A E D B
+## Levels: A B C D E
+</code></pre>
+
+<pre><code class="r">predict(foldFitFinal8,newdata=testD);
+</code></pre>
+
+<pre><code>##  [1] A A A A A A D A A A A A B A C A A B B B
+## Levels: A B C D E
+</code></pre>
+
+<pre><code class="r">predict(foldFitFinal9,newdata=testD);
+</code></pre>
+
+<pre><code>##  [1] C A A A A A D A A A A A B A A A A E B B
+## Levels: A B C D E
+</code></pre>
+
+<pre><code class="r">predict(foldFitFinal10,newdata=testD);
+</code></pre>
+
+<pre><code>##  [1] A A A A A A D A A A A A B A D A A E B B
+## Levels: A B C D E
+</code></pre>
+
+<p>We exprec low accuracy of our model in the first, tirteenth, and nineteenth
+column. </p>
 
 <hr/>
 

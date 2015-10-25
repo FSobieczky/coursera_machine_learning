@@ -36,13 +36,6 @@ library(rpart);
 set.seed(53079239)
 ```
 
-Preliminaries:
-
-
-```{r load_caretl}
-library(caret)
-```
-
 -------------------------------------------------------------------------
 
 Data import and preparation:
@@ -203,10 +196,50 @@ accel and gyros.
 ```{r, echo=TRUE}
 trrelevant<-trDx[,grep("accel|gyros",names(trDx))];
 trrelevant$classe<-trainD$classe;
-modFitFinal<-train(classe~., method="rpart", data=trrelevant);
+modFitFinal<-train(classe~., method="lda", data=trrelevant);
 predict(modFitFinal,newdata=testD);
 ```
 
 This is our result.
 
 ---------------------------------------------------------------------
+
+Calculation of the Out of Sample Error
+-------------------------------------
+
+Using the test data we can use cross-validation to get an 
+estimate of the predicted out of sample error. Note that
+the test data set is about a thousandth in size of the
+training set. We could correspondingly use crossvalidation
+with 1000 test / training sets. However, this takes a very long time.
+Instead, we restrict ourselves to 10 fold cross-validation:
+
+
+```{r, echo=TRUE}
+folds<-createFolds(trelevant$classe, k=10)
+foldFitFinal1<-train(classe~., method="lda", data=trrelevant[folds$Fold01,]);
+foldFitFinal2<-train(classe~., method="lda", data=trrelevant[folds$Fold02,]);
+foldFitFinal3<-train(classe~., method="lda", data=trrelevant[folds$Fold03,]);
+foldFitFinal4<-train(classe~., method="lda", data=trrelevant[folds$Fold04,]);
+foldFitFinal5<-train(classe~., method="lda", data=trrelevant[folds$Fold05,]);
+foldFitFinal6<-train(classe~., method="lda", data=trrelevant[folds$Fold06,]);
+foldFitFinal7<-train(classe~., method="lda", data=trrelevant[folds$Fold07,]);
+foldFitFinal8<-train(classe~., method="lda", data=trrelevant[folds$Fold08,]);
+foldFitFinal9<-train(classe~., method="lda", data=trrelevant[folds$Fold09,]);
+foldFitFinal10<-train(classe~., method="lda", data=trrelevant[folds$Fold10,]);
+predict(foldFitFinal1,newdata=testD);
+predict(foldFitFinal2,newdata=testD);
+predict(foldFitFinal3,newdata=testD);
+predict(foldFitFinal4,newdata=testD);
+predict(foldFitFinal5,newdata=testD);
+predict(foldFitFinal6,newdata=testD);
+predict(foldFitFinal7,newdata=testD);
+predict(foldFitFinal8,newdata=testD);
+predict(foldFitFinal9,newdata=testD);
+predict(foldFitFinal10,newdata=testD);
+```
+
+We exprec low accuracy of our model in the first, tirteenth, and nineteenth
+column. 
+
+-----------------------------------------------------------------
