@@ -239,7 +239,7 @@ predict(foldFitFinal9,newdata=testD);
 predict(foldFitFinal10,newdata=testD);
 ```
 
-We exprec low accuracy of our model in the first, tirteenth, and nineteenth
-column. 
+We expect low accuracy of our model in columns
+1, 13, 15, 16, 18, 19, and 20. 
 
 -----------------------------------------------------------------
